@@ -1,0 +1,1896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="//cdn.bootcss.com/normalize/5.0.0/normalize.min.css">
+    <link rel="stylesheet" href="vendor/leaflet.css">
+
+    <title>Title</title>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+<!--<video src="js/bg.mp4" id="video" autoplay loop></video>-->
+<div class="data-v-layout">
+    <div class="data-v-com data-v-main-title">
+        <div class="data-v-container">
+            <figure>
+                <img src="img/header-all.png" alt="">
+                <figcaption>
+                    <h1 class="main-title">XXX交易数据</h1>
+                </figcaption>
+            </figure>
+        </div>
+    </div>
+    <div class="data-v-com user">
+        <div class="main-wrapper">
+            <div class="data-v-container">
+                <figure class="decoration">
+                    <img src="img/group-user-decoration.png" alt="">
+                    <figcaption>
+                        <p>用户数据</p>
+                    </figcaption>
+                </figure>
+                <div class="graph-container">
+                    <svg class="data-v-com-1"></svg>
+                </div>
+            </div>
+        </div>
+        <img class="bottom-decoration-img" src="img/b-2.png" alt="">
+    </div>
+    <div class="data-v-com trade">
+        <div class="main-wrapper">
+            <div class="data-v-container">
+                <figure class="decoration">
+                    <img src="img/group-user-decoration.png" alt="">
+                    <figcaption>
+                        <p>交易数据</p>
+                    </figcaption>
+                </figure>
+                <div class="graph-container">
+                    <svg class="data-v-com-2"></svg>
+                    <svg class="data-v-com-3"></svg>
+                    <div class="trade-data">
+                        <p class="loan-amount"><span class="label">日放款金额</span><span class="value">4,272,443</span></p>
+                        <p class="repay-amount"><span class="label">日还款金额</span><span class="value">3,892,443</span></p>
+                        <p class="trade-amount"><span class="label">日交易额</span><span class="value">8,678,432</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <img class="bottom-decoration-img" src="img/b-2.png" alt="">
+    </div>
+    <div class="data-v-com area">
+        <div class="main-wrapper">
+            <div class="data-v-container">
+                <figure class="decoration">
+                    <img src="img/area-decoration.png" alt="">
+                    <figcaption>
+                        <p>区域借款数据</p>
+                    </figcaption>
+                </figure>
+                <div class="graph-container">
+                    <svg class="data-v-com-4"></svg>
+                </div>
+            </div>
+        </div>
+        <img class="bottom-decoration-img" src="img/b-2.png" alt="">
+    </div>
+    <div class="data-v-com line">
+        <div class="main-wrapper">
+            <div class="data-v-container">
+                <figure class="decoration">
+                    <img src="img/area-decoration.png" alt="">
+                    <figcaption>
+                        <p>借还款走势图</p>
+                    </figcaption>
+                </figure>
+                <div class="graph-container">
+                    <svg class="data-v-com-5"></svg>
+                </div>
+            </div>
+        </div>
+        <img class="bottom-decoration-img" src="img/b-2.png" alt="">
+    </div>
+    <div class="data-v-com dynamic">
+        <div class="data-v-container">
+            <figure class="decoration dynamic-decoration">
+                <img src="img/dynamic-decoration.png" alt="">
+                <figcaption>
+                    <p>实时交易数据</p>
+                </figcaption>
+            </figure>
+            <div class="graph-container">
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>地区</th>
+                        <th>姓名</th>
+                        <th>操作</th>
+                        <th>金额(元)</th>
+                    </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="data-v-com pie">
+        <div class="main-wrapper">
+            <div class="data-v-container">
+                <figure class="decoration">
+                    <img src="img/area-decoration.png" alt="">
+                    <figcaption>
+                        <p>地区借款占比</p>
+                    </figcaption>
+                </figure>
+                <div class="graph-container">
+                    <div class="pie-chart">
+                        <svg class="data-v-com-6"></svg>
+                        <div class="percent-box">
+                            <p class="label"></p>
+                            <p class="value"></p>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="map-container">
+                    <svg class="data-v-map"></svg>
+                </div>
+            </div>
+        </div>
+        <img class="bottom-decoration-img" src="img/b-2.png" alt="">
+    </div>
+</div>
+
+<script src="vendor/d3.js"></script>
+<!--<script src="vendor/leaflet.js"></script>-->
+<script>
+    var dispatch = d3.dispatch('start', 'end');
+</script>
+<script>
+    (function () {
+
+        let layer = d3.select('.data-v-layout');
+        let width = 1120;
+        let height = 700;
+        layer.style('width', width)
+            .style('height', height)
+//            .style('top', `calc(50% - ${height / 2}px)`)
+//            .style('left', `calc(50% - ${width / 2}px)`)
+        ;
+
+        let widthScale = d3.scaleLinear().domain([0, 1]).range([0, width]).invert;
+        let heightScale = d3.scaleLinear().domain([0, 1]).range([0, height]).invert;
+
+        window.onload = window.onresize = function () {
+            let aspectX = widthScale(document.documentElement.clientWidth);
+            let aspectY = heightScale(document.documentElement.clientHeight);
+            d3.select('.data-v-layout')
+                .style('transform-origin', '0 0')
+                .style('transform', `scale(${aspectX}, ${aspectY})`);
+        };
+
+
+//        document.querySelector('#video').playbackRate = 0.5;
+    })();
+</script>
+<script>
+    (function () {
+        let sliceFillColor = '#2eb1f5';
+        let width = 500,
+            height = 200,
+            radius = 70;
+        let dispatcher = d3.dispatch('endTransitionArc', 'endTransitionLine', 'endTransitionRect');
+        let svg = d3.select('.data-v-com-1')
+            .attr('viewBox', `0 0 ${width} ${height}`)
+            .append('g')
+            .attr('transform', `translate(${height / 2}, ${height / 2})`);
+
+        let slices = svg.append('g')
+            .attr('class', '-slices');
+
+        let sliceTop = svg.append('g')
+            .attr('class', '-slices-top');
+
+        let sliceBottom = svg.append('g')
+            .attr('class', '-slice-bottom');
+
+        let pie = d3.pie()
+            .sort(null)
+            .value(d => d.value);
+
+        function drawSlice(data, innerRadius, cW) {
+            let arc = d3.arc()
+                .innerRadius(innerRadius)
+                .outerRadius(innerRadius + cW);
+
+            slices
+                .selectAll('path')
+                .data(pie(data))
+                .enter()
+                .append('path')
+                .classed('slice', (d, i) => i % 2 === 0)
+                .attr('fill', (d, idx) => idx % 2 === 0 ? sliceFillColor : 'transparent')
+                .attr('d', d => arc(d));
+
+            slices.selectAll('.slice')
+                .classed('rotate', true)
+                .classed('reverse', (d, i) => i % 2 === 0);
+        }
+
+        let data = [
+            {value: 3},
+            {value: 3},
+            {value: 2},
+            {value: 1},
+            {value: 3},
+            {value: 3},
+            {value: 2},
+            {value: 1},
+        ];
+
+        drawSlice(data, radius, 10);
+
+        function drawArc(container, radius, startAngle, endAngle, arcWidth, dispatcher) {
+            let arc = d3.arc()
+                .innerRadius(radius)
+                .outerRadius(radius + arcWidth);
+
+            container
+                .append('path')
+                .attr('class', '-arc')
+                .attr('fill', '#2eb1f5')
+                .transition()
+                .duration(1000)
+                .attrTween('d', function () {
+                    let i = d3.interpolate(
+                        {startAngle: startAngle, endAngle: startAngle},
+                        {startAngle: startAngle, endAngle: endAngle});
+                    return function (t) {
+                        return arc(i(t));
+                    }
+                })
+                .on('end', function () {
+                    dispatcher.call('endTransitionArc', this, container);
+                });
+        }
+
+        svg.append('circle')
+            .attr('class', '-inner-circle')
+            .classed('scaleInOut', true)
+            .attr('stroke', '#2eb1f5')
+            .attr('r', radius)
+            .attr('fill', 'transparent');
+
+        let outerRadius = radius + 29;
+
+        let arcEndpoint = {
+            x: outerRadius * Math.cos(0.2 * Math.PI),
+            y: outerRadius * Math.sin(0.2 * Math.PI)
+        };
+
+        function drawLine(container, x, y, width, dispatcher) {
+            container
+                .append('line')
+                .attr('class', '-line')
+                .attr('stroke', '#2eb1f5')
+                .attr('x1', x)
+                .attr('y1', y)
+                .attr('x2', x)
+                .attr('y2', y)
+                .transition()
+                .duration(1000)
+                .attr('x2', x + width)
+                .on('end', function () {
+                    dispatcher.call('endTransitionLine', this, container);
+                });
+        }
+
+        function drawRect(container, x, y, width, height, dispatcher) {
+            container
+                .append('rect')
+                .attr('class', '-rect')
+                .attr('stroke', '#2eb1f5')
+                .attr('stroke-width', 1)
+                .attr('fill', 'transparent')
+                .attr('x', x)
+                .attr('y', y)
+                .attr('height', height)
+                .attr('width', 0)
+                .transition()
+                .duration(1000)
+                .attr('width', width)
+                .on('end', function () {
+                    dispatcher.call('endTransitionRect', this, container);
+                });
+        }
+
+        let rect = {
+            width: 200,
+            height: 50
+        };
+
+        function drawSliceTop() {
+            sliceTop.select('.-arc').remove();
+            sliceTop.select('.-line').remove();
+            sliceTop.select('.-rect').remove();
+            sliceTop.select('.-text-wrap').remove();
+            let dispatchTop = dispatcher.copy();
+            drawArc(sliceTop, outerRadius, 1.6 * Math.PI, 2.3 * Math.PI, 1, dispatchTop);
+            dispatchTop
+                .on('endTransitionArc', function () {
+                    drawLine(sliceTop, arcEndpoint.x, -arcEndpoint.y, 100, dispatchTop);
+                })
+                .on('endTransitionLine', function () {
+                    drawRect(sliceTop, arcEndpoint.x + 100, -arcEndpoint.y - rect.height / 2, rect.width, rect.height, dispatchTop);
+                })
+                .on('endTransitionRect', function () {
+                    sliceTop
+                        .append('text')
+                        .attr('class', '-text-wrap')
+                        .attr('x', arcEndpoint.x + 100 + rect.width / 2)
+                        .attr('y', -arcEndpoint.y + 5)
+                        .transition()
+                        .duration(300)
+                        .text('新注册用户')
+                        .on('end', function () {
+                            d3.select(this)
+                                .append('tspan')
+                                .attr('class', 'new-user')
+                                .attr('dy', 2)
+                                .text(0);
+                        });
+                });
+        }
+
+        function drawSliceBottom() {
+            sliceBottom.select('.-arc').remove();
+            sliceBottom.select('.-line').remove();
+            sliceBottom.select('.-rect').remove();
+            sliceBottom.select('.-text-wrap').remove();
+            let dispatchBottom = dispatcher.copy();
+
+            drawArc(sliceBottom, outerRadius, 1.4 * Math.PI, 0.7 * Math.PI, 1, dispatchBottom);
+
+            dispatchBottom
+                .on('endTransitionArc', function () {
+                    drawLine(sliceBottom, arcEndpoint.x, arcEndpoint.y, 100, dispatchBottom);
+                })
+                .on('endTransitionLine', function () {
+                    drawRect(sliceBottom, arcEndpoint.x + 100, arcEndpoint.y - rect.height / 2, rect.width, rect.height, dispatchBottom);
+                })
+                .on('endTransitionRect', function () {
+                    sliceBottom
+                        .append('text')
+                        .attr('class', '-text-wrap')
+                        .attr('x', arcEndpoint.x + 100 + rect.width / 2)
+                        .attr('y', arcEndpoint.y + 5)
+                        .transition()
+                        .duration(300)
+                        .text('借款用户')
+                        .on('end', function () {
+                            d3.select(this)
+                                .append('tspan')
+                                .attr('class', 'loan-user')
+                                .attr('dy', 2)
+                                .text(0);
+                        });
+                });
+        }
+
+//        dispatch.on('end', function (selector) {
+//            if (selector === '.total-user') {
+        drawSliceTop();
+//                setTimeout(function () {
+        drawSliceBottom();
+//                }, 3000);
+//            }
+//        });
+
+        svg.append('text')
+            .attr('class', 'inner-text')
+            .attr('x', 0)
+            .attr('y', '-0.6em')
+            .text('总用户数')
+            .append('tspan')
+            .attr('class', 'total-user')
+            .attr('x', 0)
+            .attr('y', '0.8em')
+            .text(0);
+    })();
+</script>
+<script>
+    (function () {
+        let sliceFillColor = '#2eb1f5';
+        let width = 200,
+            height = 200,
+            radius = 70;
+        let svg = d3
+            .select('.data-v-com-2')
+            .attr('viewBox', `0 0 ${width} ${height}`)
+            .append('g')
+            .attr('transform', `translate(${height / 2}, ${height / 2})`);
+
+        let slices = svg.append('g').attr('class', 'slices');
+
+        let pie = d3.pie()
+            .sort(null)
+            .value(d => d.value);
+
+        function drawSlice(innerRadius, cW, data) {
+            let arc = d3.arc()
+                .innerRadius(innerRadius)
+                .outerRadius(innerRadius + cW);
+
+            slices
+                .selectAll('path')
+                .data(pie(data))
+                .enter()
+                .append('path')
+                .classed('slice', (d, i) => i % 2 === 0)
+                .attr('fill', (d, idx) => idx % 2 === 0 ? sliceFillColor : 'transparent')
+                .attr('d', d => arc(d));
+
+            slices.selectAll('.slice')
+                .classed('rotate', true)
+                .classed('reverse', (d, i) => i % 2 === 0);
+        }
+
+        let data = [
+            {value: 2},
+            {value: 3},
+            {value: 1.5},
+            {value: 1},
+            {value: 2},
+            {value: 3},
+            {value: 1.5},
+            {value: 1},
+        ];
+        drawSlice(radius, 10, data);
+
+        function drawArc(radius, startAngle, endAngle, arcWidth) {
+            let arc = d3.arc()
+                .innerRadius(radius)
+                .outerRadius(radius + arcWidth);
+
+            svg
+                .append('path')
+                .attr('fill', '#2eb1f5')
+                .classed('rotate bounce', true)
+                .transition()
+                .duration(300)
+                .attrTween('d', function () {
+                    let i = d3.interpolate(
+                        {startAngle: startAngle, endAngle: startAngle},
+                        {startAngle: startAngle, endAngle: endAngle});
+                    return function (t) {
+                        return arc(i(t));
+                    }
+                })
+        }
+
+        function drawCircle(radius) {
+            let arc = d3.arc()
+                .innerRadius(radius - 0.1)
+                .outerRadius(radius);
+
+            svg.append('path')
+                .attr('stroke', '#2eb1f5')
+                .classed('scaleInOut', true)
+                .transition()
+                .duration(300)
+                .attrTween('d', function () {
+                    let i = d3.interpolate({startAngle: 0, endAngle: 0}, {
+                        startAngle: 0, endAngle: 2 * Math.PI
+                    });
+                    return function (t) {
+                        return arc(i(t))
+                    }
+                });
+        }
+
+        drawCircle(radius);
+
+        let outerRadius = radius + 29;
+
+        drawArc(outerRadius, 1.65 * Math.PI, 2.3 * Math.PI, 1);
+        drawArc(outerRadius, 1.25 * Math.PI, 0.4 * Math.PI, 1);
+
+        let innerText = svg.append('text')
+            .attr('class', 'inner-text')
+            .attr('x', 0)
+            .attr('y', '-0.6em')
+            .text('累计放款金额');
+
+        innerText
+            .append('tspan')
+            .attr('class', 'total-loan-amount')
+            .attr('x', 0)
+            .attr('y', '0.8em')
+            .text(0);
+    })();
+</script>
+<script>
+    (function () {
+        let sliceFillColor = '#2eb1f5';
+
+        let width = 200,
+            height = 200,
+            radius = 70;
+        let svg = d3.select('.data-v-com-3')
+            .attr('viewBox', `0 0 ${width} ${height}`)
+            .append('g')
+            .attr('transform', `translate(${height / 2}, ${height / 2})`);
+
+        let slices = svg.append('g')
+            .attr('class', 'slices');
+
+        let pie = d3.pie()
+            .sort(null)
+            .value(d => d.value);
+
+        function drawSlice(innerRadius, cW, data) {
+            let arc = d3.arc()
+                .innerRadius(innerRadius)
+                .outerRadius(innerRadius + cW);
+
+//            slices.selectAll('path.slice')
+//                .data(pie(data))
+//                .enter()
+//                .append('path')
+//                .attr('class', 'slice')
+//                .attr('fill', (d, i) => i % 2 === 0 ? sliceFillColor : 'transparent')
+//                .attr('d', arc);
+//
+//            slices.classed('rotate', true);
+//                .transition()
+//                .duration(300)
+//                .attrTween('d', function (d) {
+//                    let i = d3.interpolate({
+//                        startAngle: d.startAngle,
+//                        endAngle: d.startAngle
+//                    }, d);
+//                    return function (t) {
+//                        return arc(i(t));
+//                    };
+//                });
+
+            slices
+                .selectAll('path')
+                .data(pie(data))
+                .enter()
+                .append('path')
+                .classed('slice', (d, i) => i % 2 === 0)
+                .classed('-slice-split', (d, i) => i % 2 === 1)
+                .attr('fill', (d, idx) => idx % 2 === 0 ? sliceFillColor : 'transparent')
+                .attr('d', d => arc(d));
+
+            slices.selectAll('.slice')
+                .classed('rotate', true)
+                .classed('reverse', (d, i) => i % 2 === 0);
+        }
+
+        let data = [
+            {value: 2},
+            {value: 1},
+            {value: 2},
+            {value: 1},
+            {value: 2},
+            {value: 1},
+            {value: 2},
+            {value: 1},
+        ];
+        drawSlice(radius, 10, data);
+
+        function drawArc(radius, startAngle, endAngle, arcWidth) {
+            let arc = d3.arc()
+                .innerRadius(radius)
+                .outerRadius(radius + arcWidth);
+
+            svg
+                .append('path')
+                .classed('rotate bounce', true)
+                .attr('fill', '#2eb1f5')
+                .transition()
+                .duration(300)
+                .attrTween('d', function () {
+                    let i = d3.interpolate(
+                        {startAngle: startAngle, endAngle: startAngle},
+                        {startAngle: startAngle, endAngle: endAngle});
+                    return function (t) {
+                        return arc(i(t));
+                    }
+                })
+        }
+
+        function drawCircle(radius) {
+            let arc = d3.arc()
+                .innerRadius(radius - 0.1)
+                .outerRadius(radius);
+
+            svg.append('path')
+                .attr('stroke', '#2eb1f5')
+                .classed('scaleInOut', true)
+                .transition()
+                .duration(300)
+                .attrTween('d', function () {
+                    let i = d3.interpolate({startAngle: 0, endAngle: 0}, {
+                        startAngle: 0, endAngle: 2 * Math.PI
+                    });
+                    return function (t) {
+                        return arc(i(t));
+                    }
+                });
+        }
+
+        drawCircle(radius);
+
+        let outerRadius = radius + 29;
+
+        drawArc(outerRadius, 1.65 * Math.PI, 2.3 * Math.PI, 1);
+        drawArc(outerRadius, 1.25 * Math.PI, 0.4 * Math.PI, 1);
+
+        let innerText = svg
+            .append('text')
+            .attr('class', 'inner-text')
+            .attr('x', 0)
+            .attr('y', '-0.6em')
+            .text('累计还款金额');
+
+        innerText
+            .append('tspan')
+            .attr('class', 'total-repay-amount')
+            .attr('x', 0)
+            .attr('y', '0.8em')
+            .text(0);
+    })();
+</script>
+<script>
+    (function () {
+        let formatNumber = d3.format(',d');
+
+        function changeNumber(selector, num, duration, delay) {
+            d3.select(selector)
+                .transition()
+                .duration(duration || 1000)
+                .delay(delay || 0)
+                .call(changeText, num)
+                //                .tween('text', function () {
+                //                    let _this = d3.select(this);
+                //                    let oldValue = _this.text().replace(/,/g, '') || 0;
+                //                    let i = d3.interpolateNumber(oldValue, num);
+                //                    return function (t) {
+                //                        _this.text(formatNumber(i(t)));
+                //                    }
+                //                })
+                .on('end', function () {
+                    dispatch.call('end', this, selector);
+                });
+        }
+
+        function changeText(t, num) {
+            t.tween('text', function () {
+                let _this = d3.select(this);
+                let oldValue = _this.text().replace(/,/g, '') || 0;
+                let i = d3.interpolateNumber(oldValue, num);
+                return function (t) {
+                    _this.text(formatNumber(i(t)));
+                }
+            });
+        }
+
+        function changeTradeData(data) {
+            let loanAmount = data.loanAmount || 0;
+            let repayAmount = data.repayAmount || 0;
+            let tradeAmount = data.tradeAmount || 0;
+            let totalRepayAmount = data.totalRepayAmount || 0;
+            let totalLoanAmount = data.totalLoanAmount || 0;
+            let totalUser = data.totalUser || 0;
+            let newUser = data.newUser || 0;
+            let loanUser = data.loanUser || 0;
+            changeNumber('.loan-amount .value', loanAmount);
+            changeNumber('.repay-amount .value', repayAmount);
+            changeNumber('.trade-amount .value', tradeAmount);
+            changeNumber('.total-repay-amount', totalRepayAmount);
+            changeNumber('.total-loan-amount', totalLoanAmount);
+            changeNumber('.total-user', totalUser);
+            changeNumber('.new-user', newUser, null, 1200);
+            changeNumber('.loan-user', loanUser, null, 1200)
+        }
+
+        function randomNumber() {
+            return parseInt(Math.random() * 1e7);
+        }
+
+        function change() {
+            let data = {
+                loanAmount: randomNumber(),
+                repayAmount: randomNumber(),
+                tradeAmount: randomNumber(),
+                totalRepayAmount: randomNumber(),
+                totalLoanAmount: randomNumber(),
+                totalUser: randomNumber(),
+                newUser: randomNumber(),
+                loanUser: randomNumber()
+            };
+            changeTradeData(data);
+        }
+
+        change();
+        setInterval(change, 5000);
+    })();
+
+
+</script>
+<script>
+    (function () {
+        function chunk(arr, size) {
+            let result = [];
+            let len = arr === null ? 0 : arr.length;
+            for (let i = 0; i < len; i += size) {
+                result.push(arr.slice(i, i + size));
+            }
+            return result;
+        }
+
+        let fullWidth = 400,
+            fullHeight = 350;
+        let margin = {
+            top: 10,
+            right: 10,
+            bottom: 50,
+            left: 60
+        };
+
+        let width = fullWidth - margin.left - margin.right;
+        let height = fullHeight - margin.top - margin.bottom;
+
+        let svg = d3.select('.data-v-com-4')
+            .attr('viewBox', `0 0 ${fullWidth} ${fullHeight}`)
+            .append('g')
+            .attr('transform', `translate(${margin.left}, ${margin.top})`);
+
+        let data = [
+            {
+                province: '广东省',
+                value: 12456
+            },
+            {
+                province: '浙江省',
+                value: 8345
+            },
+            {
+                province: '山东省',
+                value: 2567
+            },
+            {
+                province: '福建省',
+                value: 6782
+            },
+            {
+                province: '四川省',
+                value: 3456
+            },
+            {
+                province: '江苏省',
+                value: 3457
+            },
+            {
+                province: '河南省',
+                value: 3234
+            },
+            {
+                province: '云南省',
+                value: 2345
+            },
+            {
+                province: '广东省1',
+                value: 1245
+            },
+            {
+                province: '浙江省1',
+                value: 8345
+            },
+            {
+                province: '山东省1',
+                value: 2567
+            },
+            {
+                province: '福建省1',
+                value: 6782
+            },
+            {
+                province: '四川省1',
+                value: 3456
+            },
+            {
+                province: '江苏省1',
+                value: 6782
+            },
+            {
+                province: '河南省1',
+                value: 3234
+            },
+            {
+                province: '云南省1',
+                value: 2456
+            }
+        ];
+
+        let yScale = d3.scaleBand()
+            .domain(data.map(d => d.province).filter((d, i) => i < 8))
+            .range([height, 0])
+            .padding(0.6);
+
+        let xTicks = data.map(d => d.value);
+
+        let xScale = d3.scaleLinear()
+            .domain([0, d3.max(xTicks)])
+            .range([0, width]);
+
+
+        let yAxis = d3.axisLeft(yScale)
+            .ticks(5)
+            .tickPadding(20)
+            .tickSize(20);
+
+        let yAxisDom = svg
+            .append('g')
+            .attr('class', 'y-axis')
+            .call(yAxis);
+
+        yAxisDom
+            .select('.domain')
+            .remove();
+
+        yAxisDom
+            .selectAll('line')
+            .attr('stroke', '#2eb1f5');
+
+        let xAxis = d3
+            .axisBottom(xScale)
+            .ticks(5)
+            .tickPadding(5)
+            .tickSize(height);
+
+        let xAxisDom = svg.append('g')
+            .attr('class', 'x-axis')
+            .call(xAxis);
+
+        xAxisDom
+            .select('.domain')
+            .remove();
+
+        xAxisDom
+            .selectAll('.tick line')
+            .attr('stroke', 'transparent');
+
+        let tickContainer = svg.append('g')
+            .attr('class', '-tick-container');
+
+        let bgContainer = svg.append('g')
+            .attr('class', '-bg-container');
+
+        let dataContainer = svg
+            .append('g')
+            .attr('class', '-data-container');
+
+        let dataArr = chunk(data, 8);
+
+        function render(data) {
+            let areas = data.map(d => d.province);
+            let t = d3.transition().duration(1000);
+
+            let xTick = data.map(item => item.value);
+
+            xScale.domain([0, d3.max(xTick)]);
+
+            xAxisDom
+                .transition(t)
+                .call(xAxis.scale(xScale).tickSize(height));
+            xAxisDom
+                .select('.domain')
+                .remove();
+
+            xAxisDom
+                .select('.tick:first-of-type line')
+                .remove();
+            xAxisDom
+                .selectAll('.tick:not(:first-of-type) line')
+                .attr('stroke', '#a9a9a9')
+                .attr('stroke-dasharray', '1,1');
+
+            yScale.domain(areas);
+            yAxisDom
+                .transition()
+                .duration(1000)
+                .call(yAxis.scale(yScale));
+
+            yAxisDom
+                .select('.domain')
+                .remove();
+
+            yAxisDom
+                .selectAll('line')
+                .attr('stroke', '#2eb1f5');
+
+            tickContainer
+                .selectAll('rect')
+                .data(data)
+                .enter()
+                .append('rect')
+                .attr('width', 5)
+                .attr('height', yScale.bandwidth())
+                .attr('y', d => yScale(d.province))
+                .attr('x', -8)
+                .attr('fill', '#2eb1f5');
+
+            bgContainer
+                .selectAll('rect')
+                .data(data)
+                .enter()
+                .append('rect')
+                .attr('width', width)
+                .attr('height', yScale.bandwidth())
+                .attr('y', d => yScale(d.province))
+                .attr('fill', 'rgba(0, 0, 0, .3)');
+
+            let update = dataContainer.selectAll('rect').data(data);
+
+            update
+                .exit()
+                .transition(t)
+                .attr('width', 0)
+                .remove();
+
+            update
+                .transition(t)
+                .delay(1000)
+                .attr('width', d => xScale(d.value));
+
+            update
+                .enter()
+                .append('rect')
+                .attr('y', d => yScale(d.province))
+                .attr('fill', 'gold')
+                .attr('height', yScale.bandwidth())
+                .attr('width', 0)
+                .transition(t)
+                .delay(update.exit().size() ? 1000 : 0)
+                .attr('width', d => xScale(d.value));
+        }
+
+        setInterval(function () {
+            let data = dataArr.shift();
+            render(data);
+            dataArr.push(data);
+        }, 5000);
+
+
+//        let items = svg
+//            .append('g')
+//            .selectAll('rect')
+//            .data(data.filter((d, i) => i < 8))
+//            .enter();
+//        items.append('rect')
+//            .attr('width', width)
+//            .attr('height', yScale.bandwidth())
+//            .attr('y', d => yScale(d.province))
+//            .attr('fill', 'rgba(0,0,0,.3)');
+//        items.append('rect')
+//            .attr('width', d => xScale(d.value))
+//            .attr('height', yScale.bandwidth())
+//            .attr('y', d => yScale(d.province))
+//            .attr('fill', 'gold');
+//        items.append('rect')
+//            .attr('width', 5)
+//            .attr('height', yScale.bandwidth())
+//            .attr('y', d => yScale(d.province))
+//            .attr('x', -8)
+//            .attr('fill', '#2eb1f5');
+
+//        svg.append('g')
+//            .selectAll('line')
+//            .data(xScale.ticks(5).filter(d => d !== 0))
+//            .enter()
+//            .append('line')
+//            .attr('x1', d => xScale(d) + 0.5)
+//            .attr('y1', 0)
+//            .attr('x2', d => xScale(d) + 0.5)
+//            .attr('y2', height)
+//            .attr('stroke', '#a9a9a9')
+//            .attr('stroke-dasharray', '1,1');
+
+        let chartLegend = svg
+            .append('g')
+            .attr('class', 'chart-legend');
+
+        chartLegend
+            .append('rect')
+            .attr('width', 15)
+            .attr('height', 10)
+            .attr('fill', 'gold')
+            .attr('x', width / 2 - 70)
+            .attr('y', height + 30);
+
+        chartLegend
+            .append('text')
+            .text('借款用户数')
+            .attr('x', width / 2 - 10)
+            .attr('y', height + 40)
+            .style('font-size', '14px')
+    })();
+</script>
+<script>
+    (function () {
+        let fullWidth = 300,
+            fullHeight = 180;
+
+        let margin = {
+            top: 10,
+            right: 10,
+            bottom: 60,
+            left: 40
+        };
+        let width = fullWidth - margin.left - margin.right;
+        let height = fullHeight - margin.top - margin.bottom;
+
+        let svg = d3.select('.data-v-com-5')
+            .attr('viewBox', `0 0 ${fullWidth} ${fullHeight}`)
+            .append('g')
+            .attr('transform', `translate(${margin.left}, ${margin.top})`);
+
+        let timeParse = d3.timeParse('%Y-%m-%d %H:%M:%S');
+
+        let data = [
+            {
+                "date": "2017-10-01 00:00:00",
+                "series": "loan",
+                "amount": 4352800
+            },
+            {
+                "date": "2017-10-01 00:00:00",
+                "series": "repayment",
+                "amount": 3377423
+            },
+            {
+                "date": "2017-10-02 00:00:00",
+                "series": "loan",
+                "amount": 5459400
+            },
+            {
+                "date": "2017-10-02 00:00:00",
+                "series": "repayment",
+                "amount": 3839215
+            },
+            {
+                "date": "2017-10-03 00:00:00",
+                "series": "loan",
+                "amount": 5835200
+            },
+            {
+                "date": "2017-10-03 00:00:00",
+                "series": "repayment",
+                "amount": 3952450
+            },
+            {
+                "date": "2017-10-04 00:00:00",
+                "series": "loan",
+                "amount": 5686500
+            },
+            {
+                "date": "2017-10-04 00:00:00",
+                "series": "repayment",
+                "amount": 3764897
+            },
+            {
+                "date": "2017-10-05 00:00:00",
+                "series": "loan",
+                "amount": 6010000
+            },
+            {
+                "date": "2017-10-05 00:00:00",
+                "series": "repayment",
+                "amount": 4327937
+            },
+            {
+                "date": "2017-10-06 00:00:00",
+                "series": "loan",
+                "amount": 6152300
+            },
+            {
+                "date": "2017-10-06 00:00:00",
+                "series": "repayment",
+                "amount": 4469649
+            },
+            {
+                "date": "2017-10-07 00:00:00",
+                "series": "loan",
+                "amount": 5958700
+            },
+            {
+                "date": "2017-10-07 00:00:00",
+                "series": "repayment",
+                "amount": 4408042
+            },
+            {
+                "date": "2017-10-08 00:00:00",
+                "series": "loan",
+                "amount": 6003400
+            },
+            {
+                "date": "2017-10-08 00:00:00",
+                "series": "repayment",
+                "amount": 4579844
+            },
+            {
+                "date": "2017-10-09 00:00:00",
+                "series": "loan",
+                "amount": 6392100
+            },
+            {
+                "date": "2017-10-09 00:00:00",
+                "series": "repayment",
+                "amount": 5229121
+            },
+            {
+                "date": "2017-10-10 00:00:00",
+                "series": "loan",
+                "amount": 6546900
+            },
+            {
+                "date": "2017-10-10 00:00:00",
+                "series": "repayment",
+                "amount": 5482999
+            },
+            {
+                "date": "2017-10-11 00:00:00",
+                "series": "loan",
+                "amount": 6490000
+            },
+            {
+                "date": "2017-10-11 00:00:00",
+                "series": "repayment",
+                "amount": 5250865
+            },
+            {
+                "date": "2017-10-12 00:00:00",
+                "series": "loan",
+                "amount": 6216700
+            },
+            {
+                "date": "2017-10-12 00:00:00",
+                "series": "repayment",
+                "amount": 5121155
+            },
+            {
+                "date": "2017-10-13 00:00:00",
+                "series": "loan",
+                "amount": 6963700
+            },
+            {
+                "date": "2017-10-13 00:00:00",
+                "series": "repayment",
+                "amount": 5413861
+            },
+            {
+                "date": "2017-10-14 00:00:00",
+                "series": "loan",
+                "amount": 5859400
+            },
+            {
+                "date": "2017-10-14 00:00:00",
+                "series": "repayment",
+                "amount": 4688008
+            },
+            {
+                "date": "2017-10-15 00:00:00",
+                "series": "loan",
+                "amount": 5888600
+            },
+            {
+                "date": "2017-10-15 00:00:00",
+                "series": "repayment",
+                "amount": 4942485
+            },
+            {
+                "date": "2017-10-16 00:00:00",
+                "series": "loan",
+                "amount": 6249100
+            },
+            {
+                "date": "2017-10-16 00:00:00",
+                "series": "repayment",
+                "amount": 5841818
+            },
+            {
+                "date": "2017-10-17 00:00:00",
+                "series": "loan",
+                "amount": 6129200
+            },
+            {
+                "date": "2017-10-17 00:00:00",
+                "series": "repayment",
+                "amount": 5853670
+            },
+            {
+                "date": "2017-10-18 00:00:00",
+                "series": "loan",
+                "amount": 6291200
+            },
+            {
+                "date": "2017-10-18 00:00:00",
+                "series": "repayment",
+                "amount": 5980080
+            },
+            {
+                "date": "2017-10-19 00:00:00",
+                "series": "loan",
+                "amount": 6464200
+            },
+            {
+                "date": "2017-10-19 00:00:00",
+                "series": "repayment",
+                "amount": 6046690
+            },
+            {
+                "date": "2017-10-20 00:00:00",
+                "series": "loan",
+                "amount": 6543500
+            },
+            {
+                "date": "2017-10-20 00:00:00",
+                "series": "repayment",
+                "amount": 6061773
+            },
+            {
+                "date": "2017-10-21 00:00:00",
+                "series": "loan",
+                "amount": 5979300
+            },
+            {
+                "date": "2017-10-21 00:00:00",
+                "series": "repayment",
+                "amount": 5589951
+            },
+            {
+                "date": "2017-10-22 00:00:00",
+                "series": "loan",
+                "amount": 6370700
+            },
+            {
+                "date": "2017-10-22 00:00:00",
+                "series": "repayment",
+                "amount": 5803632
+            },
+            {
+                "date": "2017-10-23 00:00:00",
+                "series": "loan",
+                "amount": 6418500
+            },
+            {
+                "date": "2017-10-23 00:00:00",
+                "series": "repayment",
+                "amount": 5942021
+            },
+            {
+                "date": "2017-10-24 00:00:00",
+                "series": "loan",
+                "amount": 7141100
+            },
+            {
+                "date": "2017-10-24 00:00:00",
+                "series": "repayment",
+                "amount": 6376803
+            },
+            {
+                "date": "2017-10-25 00:00:00",
+                "series": "loan",
+                "amount": 6724600
+            },
+            {
+                "date": "2017-10-25 00:00:00",
+                "series": "repayment",
+                "amount": 6305324
+            },
+            {
+                "date": "2017-10-26 00:00:00",
+                "series": "loan",
+                "amount": 7303800
+            },
+            {
+                "date": "2017-10-26 00:00:00",
+                "series": "repayment",
+                "amount": 6474493
+            },
+            {
+                "date": "2017-10-27 00:00:00",
+                "series": "loan",
+                "amount": 6797500
+            },
+            {
+                "date": "2017-10-27 00:00:00",
+                "series": "repayment",
+                "amount": 6084433
+            },
+            {
+                "date": "2017-10-28 00:00:00",
+                "series": "loan",
+                "amount": 7086300
+            },
+            {
+                "date": "2017-10-28 00:00:00",
+                "series": "repayment",
+                "amount": 5750716
+            },
+            {
+                "date": "2017-10-29 00:00:00",
+                "series": "loan",
+                "amount": 7657100
+            },
+            {
+                "date": "2017-10-29 00:00:00",
+                "series": "repayment",
+                "amount": 5776549
+            },
+            {
+                "date": "2017-10-30 00:00:00",
+                "series": "loan",
+                "amount": 8259900
+            },
+            {
+                "date": "2017-10-30 00:00:00",
+                "series": "repayment",
+                "amount": 6507931
+            },
+            {
+                "date": "2017-10-31 00:00:00",
+                "series": "loan",
+                "amount": 7817600
+            },
+            {
+                "date": "2017-10-31 00:00:00",
+                "series": "repayment",
+                "amount": 6446088
+            }
+        ];
+
+        data.map(d => {
+            d.date = timeParse(d.date);
+            return d
+        });
+
+        let xScale = d3.scaleTime()
+            .domain([d3.min(data, d => d.date), d3.max(data, d => d.date)])
+            .range([0, width]);
+
+        let xAxis = d3.axisBottom(xScale)
+            .tickFormat(d3.timeFormat('%d日'))
+            .ticks(5)
+            .tickSize(0)
+            .tickPadding(10);
+        let xAxisDom = svg
+            .append('g')
+            .attr('transform', `translate(0, ${height})`)
+            .attr('class', 'x-axis')
+            .call(xAxis);
+        xAxisDom
+            .select('.domain')
+            .attr('stroke', '#fff');
+        xAxisDom
+            .selectAll('.tick line')
+            .remove();
+
+        let yScale = d3.scaleLinear()
+            .domain([d3.min(data, d => d.amount), d3.max(data, d => d.amount)])
+            .range([height, 0]);
+
+        let yAxis = d3.axisLeft(yScale)
+            .ticks(5)
+            .tickFormat(function (d) {
+                return d3.format(',.2r')(d / 1000);
+            })
+            .tickPadding(20)
+            .tickSize(0);
+
+//        function customAxis(g, axis) {
+//            g.call(axis);
+//            g.select('.domain').attr('stroke', '#fff');
+//            g.select('.tick line').remove();
+//        }
+
+        let yAxisDom = svg.append('g')
+            .attr('class', 'y-axis')
+            .call(yAxis);
+        yAxisDom
+            .select('.domain')
+            .attr('stroke', '#fff');
+
+        yAxisDom
+            .selectAll('.tick line')
+            .remove();
+
+        yAxisDom
+            .append('text')
+            .attr('x', '-1.5em')
+            .text('万元');
+
+        let line = d3.line()
+            .x(d => xScale(d.date))
+            .y(d => yScale(d.amount));
+
+        function drawLineChart(conf) {
+            let series = conf.series;
+            let strokeColor = conf.strokeColor;
+            svg.append('path')
+                .attr('fill', 'none')
+                .attr('stroke', strokeColor)
+                .attr('stroke-linejoin', 'round')
+                .attr('stroke-linecap', 'round')
+                .attr('stroke-width', 1)
+                .attr('d', line(data.filter(d => d.series === series)))
+                .style('stroke-dasharray', function () {
+                    return this.getTotalLength();
+                })
+                .style('stroke-dashoffset', function () {
+                    return this.getTotalLength();
+                })
+                .transition()
+                .duration(4000)
+                .style('stroke-dashoffset', 0) // 动画只播放一次
+                //                .styleTween('stroke-dasharray', function () {
+                //                    let pathLen = this.getTotalLength();
+                //                    let i = d3.interpolateString('0,' + pathLen, pathLen + ',' + pathLen);
+                //                    return function (t) {
+                //                        console.log(i(t));
+                //                        return i(t);
+                //                    }
+                //                })
+                .on('end', function repeat() {
+//                    let _this = d3.select(this);
+                    d3
+                        .select(this)
+                        .transition()
+                        .delay(2000)
+                        .on('end', function () {
+                            d3.select(this)
+                                .style('stroke-dashoffset', function () {
+                                    return this.getTotalLength();
+                                })
+                                .transition()
+                                .duration(4000)
+                                .style('stroke-dashoffset', 0)
+                                .on('end', repeat);
+                        });
+//                    d3.select(this)
+//                        .style('stroke-dashoffset', function () {
+//                            return this.getTotalLength();
+//                        })
+//                        .transition()
+//                        .duration(4000)
+//                        .delay(2000)
+//                        .style('stroke-dashoffset', 0)
+//                        .on('end', repeat);
+                }) // 动画循环播放
+            ;
+        }
+
+        drawLineChart({
+            series: 'loan',
+            strokeColor: 'steelblue'
+        });
+
+        drawLineChart({
+            series: 'repayment',
+            strokeColor: 'goldenrod'
+        });
+
+        svg.append('g')
+            .selectAll('circle.loan-point')
+            .data(data.filter(d => d.series === 'loan'))
+            .enter()
+            .append('circle')
+            .attr('class', 'loan-point')
+            .attr('cx', d => xScale(d.date))
+            .attr('cy', d => yScale(d.amount))
+            .attr('r', 3)
+            .attr('fill', 'steelblue');
+
+        svg.append('g')
+            .selectAll('circle.loan-point')
+            .data(data.filter(d => d.series === 'repayment'))
+            .enter()
+            .append('circle')
+            .attr('class', 'loan-point')
+            .attr('cx', d => xScale(d.date))
+            .attr('cy', d => yScale(d.amount))
+            .attr('r', 3)
+            .attr('fill', 'goldenrod');
+
+        let legend = svg.append('g')
+            .attr('class', 'chart-legend')
+            .attr('transform', `translate(${width / 2}, ${height + 30})`);
+
+//        let legendItem1 = legend.append('g')
+//            .attr('class', 'legend-item');
+        legend.append('rect')
+            .attr('width', 10)
+            .attr('height', 10)
+            .attr('x', '-3em')
+            .attr('fill', 'steelblue');
+
+        legend.append('text')
+            .text('借款')
+            .attr('fill', '#fff')
+            .attr('x', '-.8em')
+            .attr('y', 9)
+            .style('text-anchor', 'end')
+            .style('font-size', 12);
+//        let legendItem2 = legend.append('g')
+//            .attr('class', 'legend-item');
+
+        legend.append('rect')
+            .attr('width', 10)
+            .attr('height', 10)
+            .attr('x', '.2em')
+            .attr('fill', 'goldenrod');
+
+        legend.append('text')
+            .text('还款')
+            .attr('fill', '#fff')
+            .attr('y', 9)
+            .attr('x', '1.4em')
+            .style('text-anchor', 'start')
+            .style('font-size', 12);
+
+    })();
+</script>
+<script>
+    (function () {
+        let width = 200,
+            height = 200,
+            radius = 50;
+        let svg = d3.select('.data-v-com-6')
+            .attr('viewBox', `0 0 ${width} ${height}`)
+            .append('g')
+            .attr('transform', `translate(${height / 2}, ${height / 2})`);
+
+        let slices = svg
+            .append('g')
+            .attr('class', 'ss');
+
+        let pie = d3.pie()
+            .sort(null)
+            .value(d => d.value);
+
+
+        function drawSlice(innerRadius, cW, data) {
+            let arc = d3.arc()
+                .innerRadius(innerRadius)
+                .outerRadius(innerRadius + cW);
+
+            slices.selectAll('path.s')
+                .data(pie(data))
+                .enter()
+                .append('path')
+                .attr('class', 's')
+                .attr('fill', (d, i) => d3.schemeCategory10[i])
+                .transition()
+                .duration(300)
+                .attrTween('d', function (d) {
+                    let i = d3.interpolate({
+                        startAngle: d.startAngle,
+                        endAngle: d.startAngle
+                    }, d);
+                    return function (t) {
+                        return arc(i(t));
+                    };
+                });
+        }
+
+        let data = [
+            {loc: '华东', value: 1},
+            {loc: '华北', value: 2},
+            {loc: '华中', value: 3},
+            {loc: '华南', value: 4},
+            {loc: '东北', value: 5},
+            {loc: '西北', value: 6},
+            {loc: '西南', value: 7},
+            {loc: '港澳台', value: 8},
+        ];
+
+        let percent = d3.scaleLinear()
+            .domain([0, d3.sum(data, d => d.value)])
+            .range([0, 1]);
+
+        let range = d3.range(data.length);
+        setInterval(function () {
+            let i1 = range.shift();
+            let i2 = range[0];
+            range.push(i1);
+            let oldArc = d3.arc()
+                .innerRadius(radius)
+                .outerRadius(radius + 10);
+            let arc = d3.arc()
+                .innerRadius(radius + 2)
+                .outerRadius(radius + 15);
+
+            slices.selectAll('path.s')
+                .filter((d, i) => i === i1)
+                .transition()
+                .duration(300)
+                .attrTween('d', function (d) {
+                    let i = d3.interpolate(d, d);
+                    return function (t) {
+                        return oldArc(i(t));
+                    };
+                });
+            slices.selectAll('path.s')
+                .filter((d, i) => i === i2)
+                .transition()
+                .delay(300)
+                .duration(300)
+                .attrTween('d', function (d) {
+                    let i = d3.interpolate(d, d);
+                    return function (t) {
+                        return arc(i(t));
+                    };
+                })
+                .tween('label.text', function (d) {
+                    drawPercent(d.data.loc, percent(d.data.value));
+                });
+        }, 3000);
+
+//        let chartLegend = svg.append('g')
+//            .attr('class', 'chart-legend')
+//            .attr('transform', `translate(${radius * 2},${30 - radius})`);
+//
+//        let legendItems = chartLegend
+//            .selectAll('g')
+//            .data(data)
+//            .enter()
+//            .append('g')
+//            .attr('transform', (d, i) => `translate(${i % 2 * 60},${Math.floor(i / 2) * 20})`)
+//            .attr('class', 'legend-item');
+
+//        let centerLabel = svg.append('g')
+//            .attr('class', 'center-label');
+
+//        centerLabel.append('text')
+//            .attr('text-anchor', 'middle')
+//            .attr('class', 'label')
+//            .text('A')
+//            .attr('y', '-0.8em')
+//            .attr('stroke', '#fff');
+//
+//        centerLabel.append('text')
+//            .attr('text-anchor', 'middle')
+//            .attr('class', 'value')
+//            .text('12.0%')
+//            .attr('y', '0.8em')
+//            .attr('stroke', '#fff');
+
+//        legendItems.append('rect')
+//            .attr('width', 10)
+//            .attr('height', 10)
+//            .attr('fill', (d, i) => d3.schemeCategory10[i]);
+//
+//        legendItems.append('text')
+//            .attr('x', '1em')
+//            .attr('y', '0.7em')
+//            .style('text-anchor', 'start')
+//            .style('font-size', '14px')
+//            .text(d => d.loc);
+
+        drawSlice(radius, 10, data);
+
+        let wrapWidth = parseInt(d3.select('.pie-chart').style('width'));
+        let aspect = wrapWidth / width;
+
+        let w = Math.sqrt(2) * (radius - 10);
+        d3.select('.percent-box')
+            .style('width', w + 'px')
+            .style('height', w + 'px')
+            .style('position', 'absolute')
+            .style('top', `calc(50% - ${w * aspect / 2}px)`)
+            .style('left', `calc(50% - ${w * aspect / 2}px)`)
+            .style('text-align', 'center')
+            .style('color', '#fff');
+
+        function drawPercent(label, value) {
+            d3.select('.percent-box')
+                .select('.label')
+                .transition()
+                .duration(500)
+                //                .ease(d3.easeExpIn)
+                .styleTween('transform', function () {
+                    let i = d3.interpolate(1, 0);
+                    return function (t) {
+                        return `scaleX(${i(t)})`
+                    }
+                })
+                .on('end', function () {
+                    d3.select(this).text(label);
+                })
+                .transition()
+                .duration(500)
+                //                .ease(d3.easeExpOut)
+                .styleTween('transform', function () {
+                    let i = d3.interpolate(0, 1);
+                    return function (t) {
+                        return `scaleX(${i(t)})`
+                    }
+                });
+
+            d3.select('.percent-box')
+                .select('.value')
+                .transition()
+                .duration(300)
+                .tween('text', function () {
+                    let _this = d3.select(this);
+                    let i = d3.interpolate(0, value);
+                    return function (t) {
+                        _this.text(d3.format('.2%')(i(t)));
+                    }
+                });
+        }
+    })();
+</script>
+<script>
+    (function () {
+        let width = 500;
+        let height = 500;
+
+        let svg = d3.select('.data-v-map')
+            .attr('viewBox', `0 0 ${width} ${height}`)
+            .append('g')
+            .attr('transform', 'translate(0, 0)');
+        let projection = d3.geoMercator()
+            .center([107, 31])
+            .scale(400)
+            .translate([width / 2, height / 2]);
+
+        let path = d3.geoPath()
+            .projection(projection);
+
+        let color = d3.schemeCategory20;
+
+        d3.json('js/china.json', function (err, root) {
+            svg.append('g')
+                .attr('class', '-map-layer')
+                .selectAll('path')
+                .data(root.features)
+                .enter()
+                .append('path')
+                .attr('stroke', '#2eb1f5')
+                .attr('stroke-width', 0.5)
+                .attr('stroke-opacity', '0.1')
+                .attr('fill', 'rgba(255, 255, 255, 0.1)')
+                .attr('d', path)
+                .on('mouseover', function () {
+                    d3.select(this).attr('fill', 'yellow');
+                })
+                .on('mouseout', function () {
+                    d3.select(this).attr('fill', 'rgba(255, 255, 255, 0.1)');
+                });
+        });
+
+        let coveringLayer = svg.append('g')
+            .attr('class', '-map-covering-layer');
+
+        function drawLocs(locData) {
+            locData.forEach(function (loc, idx) {
+                let point = projection(loc);
+                let marker = coveringLayer.append('g')
+                    .attr('class', '-marker-' + idx);
+
+//                marker.transition()
+//                    .delay(Math.random() * 1000)
+//                    .on('end', function () {
+//                        d3.select(this).classed('fadeInOut', true)
+//                    });
+                if (isNaN(point[0]) || isNaN(point[1])) {
+                    return;
+                }
+                marker
+                    .append('circle')
+                    .attr('cx', point[0])
+                    .attr('cy', point[1])
+                    .attr('r', 4)
+                    .attr('fill', 'rgba(255, 235, 59, 0.4)');
+
+                marker
+                    .append('circle')
+                    .attr('cx', point[0])
+                    .attr('cy', point[1])
+                    .attr('r', 2)
+                    .attr('fill', 'gold');
+            });
+        }
+
+        d3.json('js/lbs.json', function (data) {
+            let locals = [];
+            data.forEach(item => {
+                let lng = item["lng"];
+                let lat = item["lat"];
+                if (lng && lat) {
+                    locals.push([lng, lat]);
+                }
+            });
+            drawLocs(locals);
+        });
+
+//        drawLocs([['116.30621', '39.976121']]);
+
+//        let map = L.map('map-container').setView([31, 107], 10);
+//        L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+//            attribution: '',
+//            maxZoom: 10
+//        }).addTo(map);
+//
+//        function onEachFeature(feature, layer) {
+//            layer.on({
+//                mouseover: null,
+//                mouseout: null,
+//                click: null
+//            })
+//        }
+
+//        d3.json('js/china.json', function (err, root) {
+//            let geojson = L.geoJson(root, {
+//                style: style,
+//                onEachFeature: onEachFeature
+//            }).addTo(map);
+//        });
+
+
+    })();
+</script>
+<script>
+    (function () {
+        let data = [
+            {username: '张三', loc: '上海', oper: 1, amount: 1000},
+            {username: '李四', loc: '广州', oper: 1, amount: 1000},
+            {username: '王五', loc: '杭州', oper: 1, amount: 1000},
+            {username: '赵六', loc: '广州', oper: 1, amount: 1000},
+            {username: '钱七', loc: '新疆', oper: 1, amount: 1000},
+        ];
+
+        function render(data) {
+            data = [data];
+            let t = d3.transition().duration(1000);
+            let tableContainer = d3.select('.table tbody');
+            let update = tableContainer.selectAll('tr')
+                .data(data);
+
+            update.exit()
+                .remove();
+
+            update
+                .enter()
+                .append('tr');
+
+            update
+                .html(d => {
+                    return `<td>${d.loc}</td><td>${d.username}</td><td>${d.oper === 1 ? '借款' : '还款'}</td><td>${d.amount}</td>`;
+                });
+            tableContainer
+                .transition(t)
+                .styleTween('transform', function () {
+                    let i = d3.interpolateNumber(90, 0);
+                    return function (t) {
+                        return `rotateX(${i(t)}deg)`;
+                    }
+                });
+        }
+
+        setInterval(function () {
+            let d = data.shift();
+            render(d);
+            data.push(d);
+        }, 2000);
+    })();
+</script>
+</body>
+</html>

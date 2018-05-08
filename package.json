@@ -1,0 +1,18 @@
+{
+  "name": "xc-data-v",
+  "version": "1.0.0",
+  "description": "d3大屏展示",
+  "main": "index.js",
+  "scripts": {
+    "start": "gulp serve"
+  },
+  "author": "Qinghua",
+  "license": "ISC",
+  "devDependencies": {
+    "gulp": "latest",
+    "browser-sync": "latest"
+  },
+  "dependencies": {
+    "fabric": "^1.7.20"
+  }
+}
