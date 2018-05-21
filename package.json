@@ -1,5 +1,5 @@
 {
-  "name": "xc-data-v",
+  "name": "d3-data-visualization",
   "version": "1.0.0",
   "description": "d3大屏展示",
   "main": "index.js",
@@ -11,8 +11,5 @@
   "devDependencies": {
     "gulp": "latest",
     "browser-sync": "latest"
-  },
-  "dependencies": {
-    "fabric": "^1.7.20"
   }
 }
